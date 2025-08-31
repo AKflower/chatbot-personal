@@ -69,6 +69,54 @@ from src.rag_pipeline import ChatbotPipeline
 
 # ---- Patch nested event loops (Jupyter/Streamlit) ----
 nest_asyncio.apply()
+import time
+import random
+
+
+# -------------------- SPAM/CAPTCHA Logic --------------------
+def initialize_spam_protection():
+    """Khởi tạo các biến cần thiết trong session state."""
+    if 'require_captcha' not in st.session_state:
+        st.session_state.require_captcha = False
+    if 'request_timestamps' not in st.session_state:
+        st.session_state.request_timestamps = []
+
+def check_rate_limit(max_requests: int, per_seconds: int) -> bool:
+    """Kiểm tra rate limit. Nếu vi phạm, kích hoạt CAPTCHA."""
+    current_time = time.time()
+    st.session_state.request_timestamps = [
+        ts for ts in st.session_state.request_timestamps
+        if current_time - ts < per_seconds
+    ]
+
+    if len(st.session_state.request_timestamps) >= max_requests:
+        st.session_state.require_captcha = True # Kích hoạt CAPTCHA
+        return False
+
+    st.session_state.request_timestamps.append(current_time)
+    return True
+
+def generate_captcha():
+    """Tạo câu hỏi toán học mới."""
+    st.session_state.num1 = random.randint(1, 10)
+    st.session_state.num2 = random.randint(1, 10)
+    st.session_state.captcha_answer = st.session_state.num1 + st.session_state.num2
+
+def captcha_check():
+    """Kiểm tra câu trả lời và tắt CAPTCHA nếu đúng."""
+    user_answer = st.session_state.get('captcha_input', '')
+    if user_answer.isdigit() and int(user_answer) == st.session_state.captcha_answer:
+        st.session_state.require_captcha = False # Tắt CAPTCHA
+        st.success("Xác minh thành công! Bạn có thể tiếp tục trò chuyện.")
+        # Xóa các biến không cần thiết
+        del st.session_state.num1
+        del st.session_state.num2
+        del st.session_state.captcha_answer
+        time.sleep(2) # Chờ 2 giây để người dùng đọc thông báo
+        st.rerun()
+    else:
+        st.error("Câu trả lời không đúng. Vui lòng thử lại.")
+        generate_captcha() # Tạo câu hỏi mới
 
 # -------------------- Page Config --------------------
 st.set_page_config(
@@ -179,7 +227,7 @@ def load_chatbot_pipeline():
 
 chatbot = load_chatbot_pipeline()
 ensure_session()
-
+initialize_spam_protection()
 # -------------------- Sidebar --------------------
 with st.sidebar:
     st.image("https://kflower.me/images/avatar.png", caption="Nguyen Anh Khoa", use_container_width=True)
@@ -243,18 +291,41 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
+
+
+if st.session_state.require_captcha:
+    st.warning("Bạn đã gửi yêu cầu quá nhanh. Vui lòng xác minh bạn là người thật để tiếp tục.")
+
+    if 'num1' not in st.session_state:
+        generate_captcha()
+
+    st.write(f"Vui lòng trả lời câu hỏi sau: **{st.session_state.num1} + {st.session_state.num2} = ?**")
+
+    st.text_input(
+        "Nhập câu trả lời và nhấn Enter:",
+        key="captcha_input",
+        on_change=captcha_check
+    )
+
 # -------------------- Chat Input --------------------
+prompt_disabled = st.session_state.require_captcha
+
 if prompt := st.chat_input("Ask me about my work, skills, or projects..."):
-    append_message("user", prompt)
-    with st.chat_message("user", avatar="🧑‍💻"):
-        st.markdown(prompt)
+    if check_rate_limit(max_requests=5, per_seconds=30):
+        append_message("user", prompt)
+        with st.chat_message("user", avatar="🧑‍💻"):
+            st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar="🤖"):
-        with st.spinner("Thinking..."):
-            response = run_query(chatbot, prompt)
-            st.markdown(response)
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("Thinking..."):
+                response = run_query(chatbot, prompt)
+                st.markdown(response)
 
-    append_message("assistant", response)
+        append_message("assistant", response)
+        st.rerun() # Chạy lại để xóa input sau khi gửi
+    else:
+        st.rerun() # Chạy lại để hiển thị CAPTCHA
+
 
 # -------------------- Footer --------------------
 st.markdown(
