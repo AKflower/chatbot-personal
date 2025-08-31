@@ -7,10 +7,14 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
 import google.generativeai as genai
 from dotenv import load_dotenv
+import streamlit as st
+
 
 # Tải API key từ file .env
 load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+# genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+
 
 # Định nghĩa các đường dẫn
 DATA_PATH = "data/"
