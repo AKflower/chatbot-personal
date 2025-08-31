@@ -6,3 +6,4 @@ pypdf
 python-dotenv
 langchain-community
 nest_asyncio
+pysqlite3-binary
