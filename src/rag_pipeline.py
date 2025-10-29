@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
 # Tải biến môi trường
 load_dotenv()
@@ -21,11 +21,10 @@ class ChatbotPipeline:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             temperature=0.3,
-            convert_system_message_to_human=True # Cần thiết cho một số phiên bản Gemini
+            convert_system_message_to_human=True
         )
 
-        # 2. Định nghĩa Prompt Template
-        # Thay [Tên của bạn] và [email@cuaban.com] bằng thông tin của bạn
+        # 2. Prompt Template
         self.prompt = ChatPromptTemplate.from_template(
             """
             Bạn là một trợ lý AI đại diện cho Anh Khoa.
@@ -40,25 +39,23 @@ class ChatbotPipeline:
             **Quy tắc:**
             - Giọng văn chuyên nghiệp, thân thiện.
             - Pha một chút hài hước nếu hỏi về tình cảm, nhan sắc hoặc tài chính.
-            - Trả lời ở ngôi thứ ba (ví dụ: "Anh Khoa có kinh nghiệm về...").
-            - Nếu câu hỏi không liên quan đến Khoa, hãy pha trò và nói khéo để họ hỏi những câu liên quan.
-            - Nếu họ có ý xúc phạm, hãy trả lời một cách hài hước nhưng nhắc khéo rằng không được làm như vậy.
-            - Nếu không biết, hãy lịch sự trả lời: "Tôi không có thông tin về vấn đề này. Để biết thêm chi tiết, bạn có thể liên hệ trực tiếp với Anh Khoa qua email: anhkhoabqv@gmail.com."
-            - **KHÔNG** bịa đặt thông tin.
+            - Trả lời ở ngôi thứ ba.
+            - Nếu không biết, hãy lịch sự trả lời và gợi ý liên hệ email: anhkhoabqv@gmail.com.
+            - Tuyệt đối **KHÔNG** bịa đặt thông tin.
 
             **Câu trả lời của bạn:**
             """
         )
 
-        # 3. Load Vector Store và tạo Retriever
+        # 3. Vector Store & Retriever
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         vector_store = Chroma(
             persist_directory=VECTOR_STORE_PATH,
             embedding_function=embeddings
         )
-        self.retriever = vector_store.as_retriever(search_kwargs={"k": 10}) # Lấy 3 chunk liên quan nhất
+        self.retriever = vector_store.as_retriever(search_kwargs={"k": 10})
 
-        # 4. Xây dựng RAG Chain
+        # 4. RAG Chain
         self.chain = (
             {"context": self.retriever, "question": RunnablePassthrough()}
             | self.prompt
@@ -67,11 +64,9 @@ class ChatbotPipeline:
         )
 
     def get_response(self, query):
-        """Nhận câu hỏi và trả về câu trả lời từ chain."""
         return self.chain.invoke(query)
 
-# Dùng để test nhanh
+
 if __name__ == '__main__':
     chatbot = ChatbotPipeline()
-    response = chatbot.get_response("Anh Khoa có những dự án nào nổi bật?")
-    print(response)
+    print(chatbot.get_response("Anh Khoa có những dự án nào nổi bật?"))
