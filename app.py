@@ -55,9 +55,9 @@
 # app_pretty.py
 # A prettier Streamlit UI wrapper for your RAG chatbot
 
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import streamlit as st
 from datetime import datetime
