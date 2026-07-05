@@ -19,7 +19,7 @@ class ChatbotPipeline:
     def __init__(self):
         # 1. Khởi tạo LLM
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-3.1-flash-lite",
             temperature=0.3,
             convert_system_message_to_human=True
         )
