@@ -62,13 +62,13 @@
 import streamlit as st
 from datetime import datetime
 from typing import List, Dict
-import nest_asyncio
+# import nest_asyncio
 
 # RAG pipeline
 from src.rag_pipeline import ChatbotPipeline
 
 # ---- Patch nested event loops (Jupyter/Streamlit) ----
-nest_asyncio.apply()
+# nest_asyncio.apply()
 import time
 import random
 
