@@ -48,7 +48,7 @@ def create_vector_store():
     print("Creating embeddings and storing in ChromaDB...")
     # Khởi tạo model embedding
     # embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2")
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2", output_dimensionality=768)
 
     # Tạo và lưu trữ vector store
     vector_store = Chroma.from_documents(

@@ -49,7 +49,7 @@ class ChatbotPipeline:
 
         # 3. Vector Store & Retriever
         # embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2")
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2",output_dimensionality=768)
         vector_store = Chroma(
             persist_directory=VECTOR_STORE_PATH,
             embedding_function=embeddings
